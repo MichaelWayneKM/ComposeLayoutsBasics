@@ -1,5 +1,7 @@
 package com.wkds.basiclayoutcompose
 
+import android.annotation.SuppressLint
+import android.app.Activity
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -11,30 +13,29 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.view.WindowCompat
 import com.wkds.basiclayoutcompose.ui.theme.BasicLayoutComposeTheme
 import java.util.*
 
@@ -43,16 +44,54 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             BasicLayoutComposeTheme {
-                HomeScreen()
+                HomeScreenContainer()
             }
         }
     }
 }
 
 
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun HomeScreenContainer(modifier: Modifier = Modifier) {
+
+    val isDark = isSystemInDarkTheme()
+    val statusBarColor = MaterialTheme.colorScheme.background.copy(alpha = 0.95f)
+
+    val view = LocalView.current
+
+    if (!view.isInEditMode) {
+
+        /* getting the current window by tapping into the Activity */
+        val currentWindow = (view.context as? Activity)?.window
+            ?: throw Exception("Not in an activity - unable to get Window reference")
+
+        SideEffect {
+            (view.context as Activity).window.statusBarColor = statusBarColor.toArgb()
+            /* accessing the insets controller to change appearance of the status bar, with 100% less deprecation warnings */
+            WindowCompat.getInsetsController(currentWindow, view).isAppearanceLightStatusBars = !isDark
+        }
+    }
+
+    Scaffold(
+        modifier = modifier,
+        containerColor = if (isSystemInDarkTheme()) Color.Blue.copy(
+            alpha = 0.1f
+        ) else Color.White,
+        content = {padding ->
+            HomeScreen(modifier = Modifier.padding(padding))
+        },
+        bottomBar = {
+            BottomHomescreenNavigationBar()
+        }
+    )
+}
+
 @Composable
 fun HomeScreen(modifier: Modifier = Modifier) {
     Column(modifier = modifier.verticalScroll(rememberScrollState())) {
+
         Spacer(modifier = Modifier.height(16.dp))
         SearchBar()
         HomeSection(title = R.string.align_your_body) {
@@ -62,6 +101,7 @@ fun HomeScreen(modifier: Modifier = Modifier) {
             FavoriteCollectionsGrid()
         }
         Spacer(Modifier.height(16.dp))
+
 
     }
 }
@@ -114,7 +154,6 @@ fun AlignYourBodyElement(
 ) {
     Column(
         modifier = modifier
-            .padding(vertical = 20.dp)
             .clip(shape = RoundedCornerShape(4.dp))
             .background(color = MaterialTheme.colorScheme.surface)
             .padding(24.dp),
@@ -232,7 +271,7 @@ fun HomeSection(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
-    Column() {
+    Column(modifier = modifier) {
         Text(
             stringResource(id = title).uppercase(Locale.getDefault()),
             style = MaterialTheme.typography.titleMedium.copy(
@@ -247,6 +286,32 @@ fun HomeSection(
     }
 }
 
+
+@Composable
+fun BottomHomescreenNavigationBar(modifier: Modifier = Modifier) {
+    BottomAppBar(modifier = modifier) {
+        Row {
+
+            NavigationBarItem(
+                label = {
+                    Text(stringResource(R.string.bottom_navigation_home))
+                },
+                selected = true,
+                onClick = { /*TODO*/ },
+                icon = { Icon(imageVector = Icons.Default.Home, contentDescription = "") }
+            )
+
+            NavigationBarItem(
+                label = {
+                    Text(stringResource(R.string.bottom_navigation_profile))
+                },
+                selected = false,
+                onClick = { /*TODO*/ },
+                icon = { Icon(imageVector = Icons.Default.AccountCircle, contentDescription = "") }
+            )
+        }
+    }
+}
 
 @Preview(showBackground = true)
 @Composable
